@@ -110,13 +110,13 @@ function _renewalinvoices_civix_civicrm_upgrade($op, CRM_Queue_Queue $queue = NU
 }
 
 /**
- * @return CRM_Renewalinvoices_Upgrader
+ * @return CRM_RenewalInvoices_Upgrader
  */
 function _renewalinvoices_civix_upgrader() {
-  if (!file_exists(__DIR__.'/CRM/Renewalinvoices/Upgrader.php')) {
+  if (!file_exists(__DIR__.'/CRM/RenewalInvoices/Upgrader.php')) {
     return NULL;
   } else {
-    return CRM_Renewalinvoices_Upgrader_Base::instance();
+    return CRM_RenewalInvoices_Upgrader_Base::instance();
   }
 }
 
