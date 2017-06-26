@@ -106,3 +106,21 @@ function renewalinvoices_civicrm_caseTypes(&$caseTypes) {
 function renewalinvoices_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
   _renewalinvoices_civix_civicrm_alterSettingsFolders($metaDataFolders);
 }
+
+/**
+ * Implementation of hook_civicrm_buildForm
+ *
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_buildForm
+ */
+function renewalinvoices_civicrm_buildForm($formName, &$form) {
+  if ($formName == "CRM_Admin_Form_ScheduleReminders") {
+    $form->addEntityRef('relationship_type', ts('Relationship'), array(
+      'entity' => 'RelationshipType',
+      'placeholder' => ts('- Select Relationship -'),
+      'select' => array('minimumInputLength' => 0),
+    ));
+    CRM_Core_Region::instance('page-body')->add(array(
+      'template' => 'CRM/RenewalInvoices/Form/Relationship.tpl',
+    ));
+  }
+}
