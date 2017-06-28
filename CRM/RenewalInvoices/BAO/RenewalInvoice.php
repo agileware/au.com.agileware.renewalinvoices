@@ -29,7 +29,7 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
    */
   public static function deleteEntity($id) {
     $sql = "DELETE FROM civicrm_renewalinvoices_entity WHERE reminder_id = {$id}";
-    return CRM_Core_DAO::singleValueQuery($sql);
+    CRM_Core_DAO::singleValueQuery($sql);
   }
 
   /**
@@ -37,6 +37,8 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
    *
    * @param $id|integer
    *   Scheduled Reminder ID.
+   *
+   * @return $relationship_type_id|integer
    */
   public static function checkRelationship($id) {
     $sql = "SELECT relationship_type_id FROM civicrm_renewalinvoices_entity WHERE reminder_id = {$id}";
@@ -52,6 +54,8 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
    *   Contact ID.
    * @param $directions|array
    *   Array of directions used to retrieve relationships against.
+   *
+   * @return $contacts|array
    */
   public static function getEmails($relationshipTypeId, $cid, $directions) {
     $contacts = array();
@@ -73,6 +77,7 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
             foreach ($aEmails['values'] as $key => $val) {
               if ($val['location_type_id'] == CRM_Core_PseudoConstant::getKey('CRM_Core_DAO_Address', 'location_type_id', 'Billing')) {
                 $contacts[$val['contact_id']] = $val['email'];
+                break;
               }
               elseif ($val['is_primary'] == 1) {
                 $contacts[$val['contact_id']] = $val['email'];
@@ -92,10 +97,15 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
    *   Scheduled Reminder ID.
    * @param $email|string
    *   Email Address of member.
+   *
+   * @return $emails|array
    */
   public static function checkRelatedContacts($reminderId, $email) {
     $sql = "SELECT relationship_type_id FROM civicrm_renewalinvoices_entity where reminder_id = {$reminderId}";
     $relationshipTypeId = CRM_Core_DAO::singleValueQuery($sql);
+    if (!$relationshipTypeId) {
+      return array($email);
+    }
 
     // Get contact ID.
     $result = civicrm_api3('Email', 'get', array(
@@ -112,11 +122,12 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
       'contact_id_b' => 'contact_id_a',
     );
 
+    // Get emails of related contacts.
     $emails = self::getEmails($relationshipTypeId, $cid, $directions);
 
     // Check if Limit to or Also include.
-    $extra = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_ActionSchedule', $reminderId, 'limit_to');
-    if ($extra) {
+    $limit = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_ActionSchedule', $reminderId, 'limit_to');
+    if ($limit) {
       return $emails;
     }
     else {

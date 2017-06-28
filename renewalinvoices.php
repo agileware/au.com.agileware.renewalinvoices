@@ -161,5 +161,8 @@ function renewalinvoices_civicrm_alterMailParams(&$params, $context) {
     if (empty($contacts)) {
       $params['abortMailSend'] = TRUE;
     }
+    else {
+      $params['toEmail'] = implode(',', $contacts);
+    }
   }
 }
