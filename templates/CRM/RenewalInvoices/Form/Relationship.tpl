@@ -9,9 +9,25 @@
 <script type="text/javascript">
 CRM.$(function($) {
 $('#relationshipGroup').insertAfter('#recipientList');
+
+if ($("#recipient").val() != 'relationship') {
+  $('#relationshipGroup').hide();
+}
+
 $(document).ajaxComplete(function( event, xhr, settings ) {
   if (~settings.url.indexOf("civicrm/ajax/mapping?mappingID=4")) {
-    $("#recipient").append('<option value = "relationship">Select Relationship</option>');
+    if ($("#recipient option[value='relationship']").length <= 0) {
+      $("#recipient").append('<option value = "relationship">Select Relationship</option>');
+    }
+    var relationshiptypeid = '{/literal}{$relationshiptypeid}{literal}';
+    if (relationshiptypeid) {
+        $("#recipient").val('relationship');
+        $('#recipientManual').hide();
+        $("#relationship_type").select2("val", relationshiptypeid);
+    }
+    if ($("#recipient").val() == 'relationship') {
+      $('#relationshipGroup').show();
+    }
   }
 
   $('#recipient').change(function() {

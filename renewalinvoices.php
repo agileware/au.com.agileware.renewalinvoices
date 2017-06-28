@@ -113,7 +113,16 @@ function renewalinvoices_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) 
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_buildForm
  */
 function renewalinvoices_civicrm_buildForm($formName, &$form) {
-  if ($formName == "CRM_Admin_Form_ScheduleReminders") {
+  if ($formName == "CRM_Admin_Form_ScheduleReminders" && ($form->_action & CRM_Core_Action::ADD || $form->_action & CRM_Core_Action::UPDATE)) {
+    if ($form->getVar('_id')) {
+      $values = $form->getVar('_values');
+      if ($values['mapping_id'] == 4) {
+        $relationshipTypeId = CRM_RenewalInvoices_BAO_RenewalInvoice::checkRelationship($values['id']);
+        if ($relationshipTypeId) {
+          $form->assign('relationshiptypeid', $relationshipTypeId);
+        }
+      }
+    }
     $form->addEntityRef('relationship_type', ts('Relationship'), array(
       'entity' => 'RelationshipType',
       'placeholder' => ts('- Select Relationship -'),
@@ -122,5 +131,35 @@ function renewalinvoices_civicrm_buildForm($formName, &$form) {
     CRM_Core_Region::instance('page-body')->add(array(
       'template' => 'CRM/RenewalInvoices/Form/Relationship.tpl',
     ));
+  }
+}
+
+/**
+ * Implementation of hook_civicrm_postProcess
+ *
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_postProcess
+ */
+function renewalinvoices_civicrm_postProcess($formName, &$form) {
+  if ($formName == "CRM_Admin_Form_ScheduleReminders") {
+    $id = $form->get('id');
+    $params = array(
+      'reminder_id' => $id,
+      'relationship_type' => CRM_Utils_Array::value('relationship_type', $form->_submitValues),
+    );
+    if ($form->_submitValues['entity'][0] == 4 && $form->_submitValues['recipient'] == 'relationship') {
+      CRM_RenewalInvoices_BAO_RenewalInvoice::addEntity($params);
+    }
+    else {
+      CRM_RenewalInvoices_BAO_RenewalInvoice::deleteEntity($id);
+    }
+  }
+}
+
+function renewalinvoices_civicrm_alterMailParams(&$params, $context) {
+  if ($params['groupName'] == "Scheduled Reminder Sender" && $params['entity'] == "action_schedule") {
+    $contacts = CRM_RenewalInvoices_BAO_RenewalInvoice::checkRelatedContacts($params['entity_id'], $params['toEmail']);
+    if (empty($contacts)) {
+      $params['abortMailSend'] = TRUE;
+    }
   }
 }

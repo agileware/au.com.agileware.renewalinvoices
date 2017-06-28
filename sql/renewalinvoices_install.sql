@@ -12,3 +12,5 @@ CREATE TABLE IF NOT EXISTS `civicrm_renewalinvoices_entity` (
   CONSTRAINT FK_civicrm_renewalinvoices_entity_relationship_type_id FOREIGN KEY (`relationship_type_id`)
     REFERENCES `civicrm_relationship_type`(`id`) ON DELETE CASCADE
 )  ENGINE=InnoDB DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci;
+
+ALTER TABLE `civicrm_renewalinvoices_entity` ADD UNIQUE `unique_index_reminder_relationship`(`reminder_id`, `relationship_type_id`);
