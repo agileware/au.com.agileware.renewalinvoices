@@ -191,7 +191,6 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
     // Set the template tokens.
     self::setTplParams($contactID, $contribution, $membership, $lineItems);
 
-    CRM_Core_Error::debug( '$template', $template );
     // Tokenize the HTML template.
     $template = CRM_Core_Smarty::singleton()->fetch("string:{$template}");
 
