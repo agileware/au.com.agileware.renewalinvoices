@@ -155,14 +155,43 @@ function renewalinvoices_civicrm_postProcess($formName, &$form) {
   }
 }
 
+/**
+ * Implementation of hook_civicrm_alterMailParams
+ *
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_alterMailParams
+ */
 function renewalinvoices_civicrm_alterMailParams(&$params, $context) {
-  if ($params['groupName'] == "Scheduled Reminder Sender" && $params['entity'] == "action_schedule") {
+  if ($params['groupName'] == "Scheduled Reminder Sender" && $params['entity'] == "action_schedule"
+      && CRM_RenewalInvoices_BAO_RenewalInvoice::checkSetting($params['entity_id'])) {
     $contacts = CRM_RenewalInvoices_BAO_RenewalInvoice::checkRelatedContacts($params['entity_id'], $params['toEmail']);
     if (empty($contacts)) {
       $params['abortMailSend'] = TRUE;
+      return;
     }
-    else {
-      $params['toEmail'] = implode(',', $contacts);
+    list($membership, $contribution) = CRM_RenewalInvoices_BAO_RenewalInvoice::getMembershipAndContribution($params['entity_id'], $params['toEmail']);
+    $params['isEmailPdf'] = TRUE;
+    $params['contributionId'] = $contribution['id'];
+    $params['contactId'] = $contribution['contact_id'];
+
+    // Set extra template params for membership pertaining to renewed membership and new contribution.
+    // We can drop in any template params here without modifying core to suit our needs.
+    CRM_RenewalInvoices_BAO_RenewalInvoice::setTplParams($contribution['contact_id'], $contribution, $membership);
+
+    // Generate the invoice PDF to be attached to the mail. 
+    $pdfHtml = CRM_Contribute_BAO_ContributionPage::addInvoicePdfToEmail($params['contributionId'], $params['contactId']);
+    $date = date('YmdHis');
+    $pdfFileName = "Invoice_{$contribution['id']}_$date.pdf";
+    $fileName = CRM_Contribute_Form_Task_Invoice::putFile($pdfHtml, $pdfFileName);
+
+    // Create the activity
+    $params['target_id'] = array_keys($contacts);
+    $params['source_record_id'] = $contribution['id'];
+    CRM_Contribute_Form_Task_Invoice::addActivities("Invoice", $params['contactId'], $fileName, $params);
+
+    if (empty($params['attachments'])) {
+      $params['attachments'] = array();
     }
+    $params['attachments'][] = CRM_Utils_Mail::appendPDF($pdfFileName, $pdfHtml, NULL);
+    $params['toEmail'] = implode(',', $contacts);
   }
 }
