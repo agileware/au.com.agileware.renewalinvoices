@@ -9,9 +9,11 @@
 <script type="text/javascript">
 CRM.$(function($) {
 $('#relationshipGroup').insertAfter('#recipientList');
-
 if ($("#recipient").val() != 'relationship') {
   $('#relationshipGroup').hide();
+}
+else {
+  $('#relationshipGroup').show();
 }
 
 $(document).ajaxComplete(function( event, xhr, settings ) {
@@ -19,12 +21,18 @@ $(document).ajaxComplete(function( event, xhr, settings ) {
     if ($("#recipient option[value='relationship']").length <= 0) {
       $("#recipient").append('<option value = "relationship">Select Relationship</option>');
     }
-    var relationshiptypeid = '{/literal}{$relationshiptypeid}{literal}';
-    if (relationshiptypeid) {
+    var reminderId = '{/literal}{$reminderID}{literal}';
+    var url = CRM.url('civicrm/checkrelationship');
+    $.post( url, { reminder_id: reminderId })
+      .done(function( data ) {
+      var relationshiptypeid = data;
+      if (relationshiptypeid) {
         $("#recipient").val('relationship');
         $('#recipientManual').hide();
         $("#relationship_type").select2("val", relationshiptypeid);
-    }
+        $('#relationshipGroup').show();
+      }
+    });
     if ($("#recipient").val() == 'relationship') {
       $('#relationshipGroup').show();
     }

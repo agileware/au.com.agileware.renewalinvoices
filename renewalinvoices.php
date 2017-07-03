@@ -117,10 +117,7 @@ function renewalinvoices_civicrm_buildForm($formName, &$form) {
     if ($form->getVar('_id')) {
       $values = $form->getVar('_values');
       if ($values['mapping_id'] == 4) {
-        $relationshipTypeId = CRM_RenewalInvoices_BAO_RenewalInvoice::checkRelationship($values['id']);
-        if ($relationshipTypeId) {
-          $form->assign('relationshiptypeid', $relationshipTypeId);
-        }
+        $form->assign('reminderID', $form->getVar('_id'));
       }
     }
     $form->addEntityRef('relationship_type', ts('Relationship'), array(
@@ -131,6 +128,19 @@ function renewalinvoices_civicrm_buildForm($formName, &$form) {
     CRM_Core_Region::instance('page-body')->add(array(
       'template' => 'CRM/RenewalInvoices/Form/Relationship.tpl',
     ));
+  }
+}
+
+/**
+ * Implementation of hook_civicrm_validateForm
+ *
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_validateForm
+ */
+function renewalinvoices_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
+  if ($formName == "CRM_Admin_Form_ScheduleReminders") {
+    if (CRM_Utils_Array::value('recipient', $fields) && empty($fields['relationship_type'])) {
+      $errors['recipient'] = ts('If Relationship is selected, you must specify at least one option from the dropdown below.');
+    }
   }
 }
 
@@ -162,7 +172,7 @@ function renewalinvoices_civicrm_postProcess($formName, &$form) {
  */
 function renewalinvoices_civicrm_alterMailParams(&$params, $context) {
   if ($params['groupName'] == "Scheduled Reminder Sender" && $params['entity'] == "action_schedule"
-      && CRM_RenewalInvoices_BAO_RenewalInvoice::checkSetting($params['entity_id'])) {
+      && CRM_RenewalInvoices_BAO_RenewalInvoice::checkRelationship($params['entity_id'])) {
     $contacts = CRM_RenewalInvoices_BAO_RenewalInvoice::checkRelatedContacts($params['entity_id'], $params['toEmail']);
     if (empty($contacts)) {
       $params['abortMailSend'] = TRUE;

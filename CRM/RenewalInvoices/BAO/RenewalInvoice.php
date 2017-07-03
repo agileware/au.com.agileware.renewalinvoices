@@ -104,23 +104,6 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
   }
 
   /**
-   * Function to check if the current scheduled reminder is associated with a relationship type.
-   *
-   * @param $reminderId|integer
-   *   Scheduled Reminder ID.
-   *
-   * @return $relationshipTypeId|integer
-   */
-  public static function checkSetting($reminderId) {
-    $sql = "SELECT relationship_type_id FROM civicrm_renewalinvoices_entity where reminder_id = {$reminderId}";
-    $relationshipTypeId = CRM_Core_DAO::singleValueQuery($sql);
-    if (!$relationshipTypeId) {
-      return FALSE;
-    }
-    return TRUE;
-  }
-
-  /**
    * Function to check if the current scheduled reminder has related contacts and retrieve their emails.
    *
    * @param $reminderId|integer
