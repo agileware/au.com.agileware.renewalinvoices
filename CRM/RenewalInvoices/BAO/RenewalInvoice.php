@@ -45,6 +45,14 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
     return CRM_Core_DAO::singleValueQuery($sql);
   }
 
+  /**
+   * Function to retrieve contact ID from email address.
+   *
+   * @param $email|string
+   *   Email address.
+   *
+   * @return $cid|integer
+   */
   public static function getContactID($email) {
     $cid = NULL;
     $result = civicrm_api3('Email', 'get', array(
@@ -113,10 +121,7 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
    *
    * @return $emails|array
    */
-  public static function checkRelatedContacts($reminderId, $email) {
-    $sql = "SELECT relationship_type_id FROM civicrm_renewalinvoices_entity where reminder_id = {$reminderId}";
-    $relationshipTypeId = CRM_Core_DAO::singleValueQuery($sql);
-
+  public static function checkRelatedContacts($reminderId, $email, $relationshipTypeId) {
     // Get contact ID.
     $cid = self::getContactID($email);
 
@@ -152,11 +157,11 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
    *   Line items array.
    *
    */
-  public static function createInvoice($contactID, $contribution, $membership, $lineItems) {
+  public static function createInvoice($contribution, $membership) {
     // Get the template - Online Membership receipt.
     $workflow = civicrm_api3('OptionValue', 'get', array(
       'option_group_id' => 'msg_tpl_workflow_membership',
-      'name' => 'membership_online_receipt',
+      'name' => 'membership_offline_receipt',
       'return' => array('id'),
     ));
     $workflowId = CRM_Utils_Array::value('id', $workflow, NULL);
@@ -172,17 +177,12 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
       $template = $result['values'][0]['msg_html'];
     }
     // Set the template tokens.
-    self::setTplParams($contactID, $contribution, $membership, $lineItems);
+    self::setTplParams($contribution, $membership);
 
     // Tokenize the HTML template.
     $template = CRM_Core_Smarty::singleton()->fetch("string:{$template}");
 
-    // Generate PDF Invoice.
-    return CRM_Utils_PDF_Utils::html2pdf($template,
-      'civicrmContributionReceipt.pdf',
-      FALSE,
-      NULL
-    );
+    return $template;
   }
 
   /**
@@ -199,23 +199,24 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
    *
    * @return $tplParams|array
    */
-  public static function setTplParams($contactID, $contribution, $membership, $lineItems = array()) {
+  public static function setTplParams($contribution, $membership) {
     $title = isset($contribution['title']) ? $contribution['title'] : CRM_Contribute_PseudoConstant::contributionPage($contribution['contribution_page_id']);
 
+    $dates = CRM_Member_BAO_MembershipType::getRenewalDatesForMembershipType($membership['id']);
     $tplParams = array(
-      'contactID' => $contactID,
+      'contactID' => $contribution['contact_id'],
       'membership_name' => CRM_Member_PseudoConstant::membershipType($membership['membership_type_id']),
-      'mem_start_date' => $membership['start_date'],
-      'mem_join_date' => $membership['join_date'],
-      'mem_end_date' => $membership['end_date'],
+      'mem_start_date' => CRM_Utils_Date::customFormat($dates['start_date']),
+      'mem_join_date' => CRM_Utils_Date::customFormat($dates['join_date']),
+      'mem_end_date' => CRM_Utils_Date::customFormat($dates['end_date']),
       'membership_assign' => TRUE,
       'mem_status' => CRM_Member_PseudoConstant::membershipStatus($membership['status_id'], NULL, 'label'),
-      'displayName' => CRM_Contact_BAO_Contact::displayName($contactID),
+      'displayName' => CRM_Contact_BAO_Contact::displayName($contribution['contact_id']),
       'contributionID' => CRM_Utils_Array::value('id', $contribution),
       'contributionOtherID' => CRM_Utils_Array::value('contribution_other_id', $contribution),
-      'lineItem' => CRM_Utils_Array::value('0', $lineItems),
       'title' => $title,
       'amount' => $contribution['total_amount'],
+      'formValues' => array('total_amount' => $contribution['total_amount']),
     );
 
     if ($contributionTypeId = CRM_Utils_Array::value('financial_type_id', $contribution)) {
@@ -271,6 +272,7 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
       'sequential' => 1,
       'entity_table' => "civicrm_membership",
       'entity_id' => $membershipId,
+      'contribution_id' => array('IS NOT NULL' => 1),
     ));
 
     // Get membership info. We need this to supply tokens to the PDF.
@@ -302,8 +304,6 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
     if ($contribution['count'] > 0) {
       $entities = array($membership['values'][0], $contribution['values'][0]);
       return $entities;
-      // Create the invoice - Use this if we need to change the template for the invoice later.
-      // return self::createInvoice($cid, $contribution['values'][0], $membership['values'][0], $lineItems['values']);
     }
   }
 }

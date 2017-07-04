@@ -28,9 +28,10 @@ $(document).ajaxComplete(function( event, xhr, settings ) {
       var relationshiptypeid = data;
       if (relationshiptypeid) {
         $("#recipient").val('relationship');
-        $('#recipientManual').hide();
         $("#relationship_type").select2("val", relationshiptypeid);
         $('#relationshipGroup').show();
+        $('#recipientGroup').hide();
+        $('#recipientManual').hide();
       }
     });
     if ($("#recipient").val() == 'relationship') {

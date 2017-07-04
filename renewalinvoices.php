@@ -108,6 +108,40 @@ function renewalinvoices_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) 
 }
 
 /**
+ * Implementation of hook_civicrm_tokens
+ *
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_tokens
+ */
+function renewalinvoices_civicrm_tokens(&$tokens) {
+  $tokens['contribution'] = array(
+    'contribution.attachInvoice' => ts("Attach Invoice"),
+  );
+  $tokens['membership'] = array(
+    'membership.nextEndDate' => ts("Membership Future End Date"),
+  );
+}
+
+/**
+ * Implementation of hook_civicrm_tokenValues
+ *
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_tokenValues
+ */
+function renewalinvoices_civicrm_tokenValues(&$values, $cids, $job = null, $tokens = array(), $context = null) {
+  if ($context == "CRM_Core_BAO_ActionSchedule") {
+    if (in_array('attachInvoice', $tokens['contribution'])) {
+      foreach ($cids as $cid) {
+        $values[$cid]['contribution.attachInvoice'] = "[attachInvoice]";
+      }
+    }
+    if (in_array('nextEndDate', $tokens['membership'])) {
+      foreach ($cids as $cid) {
+        $values[$cid]['membership.nextEndDate'] = "[nextEndDate]";
+      }
+    }
+  }
+}
+
+/**
  * Implementation of hook_civicrm_buildForm
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_buildForm
@@ -145,6 +179,36 @@ function renewalinvoices_civicrm_validateForm($formName, &$fields, &$files, &$fo
 }
 
 /**
+ * Implementation of hook_civicrm_pre
+ *
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_pre
+ */
+function renewalinvoices_civicrm_pre($op, $objectName, $id, &$params) {
+  if ($objectName == "Activity" && $op == "create" &&
+    $params['activity_type_id'] = CRM_Core_PseudoConstant::getKey('CRM_Activity_BAO_Activity', 'activity_type_id', 'Membership Renewal Reminder')) {
+
+    // Check to see if we have tokens we need to replace in the activity details.
+    if (strpos($params['details'], '[attachInvoice]') !== FALSE) {
+      $params['details'] = str_replace("[attachInvoice]","", $params['details']);
+      $params['attachFile_1'] = array(
+        'uri' => CRM_Core_Smarty::singleton()->get_template_vars('fileName'),
+        'type' => 'application/pdf',
+        'location' => CRM_Core_Smarty::singleton()->get_template_vars('fileName'),
+        'upload_date' => date('YmdHis'),
+      );
+    }
+    if (strpos($params['details'], '[nextEndDate]') !== FALSE) {
+      $endDate = CRM_Core_Smarty::singleton()->get_template_vars('mem_end_date');
+      $params['details'] = str_replace("[nextEndDate]", $endDate, $params['details']);
+    }
+
+    // Assign additional params.
+    $params['target_contact_id'] = CRM_Core_Smarty::singleton()->get_template_vars('target_contact_id');
+    $params['source_record_id'] = CRM_Core_Smarty::singleton()->get_template_vars('source_record_id');
+  }
+}
+
+/**
  * Implementation of hook_civicrm_postProcess
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_postProcess
@@ -172,8 +236,8 @@ function renewalinvoices_civicrm_postProcess($formName, &$form) {
  */
 function renewalinvoices_civicrm_alterMailParams(&$params, $context) {
   if ($params['groupName'] == "Scheduled Reminder Sender" && $params['entity'] == "action_schedule"
-      && CRM_RenewalInvoices_BAO_RenewalInvoice::checkRelationship($params['entity_id'])) {
-    $contacts = CRM_RenewalInvoices_BAO_RenewalInvoice::checkRelatedContacts($params['entity_id'], $params['toEmail']);
+    && ($relationshipTypeId = CRM_RenewalInvoices_BAO_RenewalInvoice::checkRelationship($params['entity_id']))) {
+    $contacts = CRM_RenewalInvoices_BAO_RenewalInvoice::checkRelatedContacts($params['entity_id'], $params['toEmail'], $relationshipTypeId);
     if (empty($contacts)) {
       $params['abortMailSend'] = TRUE;
       return;
@@ -183,25 +247,38 @@ function renewalinvoices_civicrm_alterMailParams(&$params, $context) {
     $params['contributionId'] = $contribution['id'];
     $params['contactId'] = $contribution['contact_id'];
 
-    // Set extra template params for membership pertaining to renewed membership and new contribution.
-    // We can drop in any template params here without modifying core to suit our needs.
-    CRM_RenewalInvoices_BAO_RenewalInvoice::setTplParams($contribution['contact_id'], $contribution, $membership);
-
-    // Generate the invoice PDF to be attached to the mail. 
-    $pdfHtml = CRM_Contribute_BAO_ContributionPage::addInvoicePdfToEmail($params['contributionId'], $params['contactId']);
-    $date = date('YmdHis');
-    $pdfFileName = "Invoice_{$contribution['id']}_$date.pdf";
-    $fileName = CRM_Contribute_Form_Task_Invoice::putFile($pdfHtml, $pdfFileName);
-
-    // Create the activity
-    $params['target_id'] = array_keys($contacts);
-    $params['source_record_id'] = $contribution['id'];
-    CRM_Contribute_Form_Task_Invoice::addActivities("Invoice", $params['contactId'], $fileName, $params);
-
-    if (empty($params['attachments'])) {
-      $params['attachments'] = array();
+    // Calculate new end date.
+    if (strpos($params['html'], '[nextEndDate]') !== FALSE) {
+      $dates = CRM_Member_BAO_MembershipType::getRenewalDatesForMembershipType($membership['id']);
+      $params['html'] = str_replace("[nextEndDate]", CRM_Utils_Date::customFormat($dates['end_date']), $params['html']);
+      $params['text'] = str_replace("[nextEndDate]", CRM_Utils_Date::customFormat($dates['end_date']), $params['text']);
     }
-    $params['attachments'][] = CRM_Utils_Mail::appendPDF($pdfFileName, $pdfHtml, NULL);
+
+    // Generate the invoice PDF to be attached to the mail.
+    if (strpos($params['html'], '[attachInvoice]') !== FALSE) {
+      $params['html'] = str_replace("[attachInvoice]","", $params['html']);
+      $params['text'] = str_replace("[attachInvoice]","", $params['text']);
+
+      // Membership Offline Renewal Receipt
+      $pdfHtml = CRM_RenewalInvoices_BAO_RenewalInvoice::createInvoice($contribution, $membership);
+
+      // Uncomment this to print a contribution receipt instead.
+      // $pdfHtml = CRM_Contribute_BAO_ContributionPage::addInvoicePdfToEmail($params['contributionId'], $params['contactId']);
+
+      $date = date('YmdHis');
+      $pdfFileName = "Invoice_{$contribution['id']}_$date.pdf";
+      $fileName = CRM_Contribute_Form_Task_Invoice::putFile($pdfHtml, $pdfFileName);
+      if (empty($params['attachments'])) {
+        $params['attachments'] = array();
+      }
+      $params['attachments'][] = CRM_Utils_Mail::appendPDF($pdfFileName, $pdfHtml, NULL);
+
+      // Create the activity
+      CRM_Core_Smarty::singleton()->assign('fileName', $fileName);
+      CRM_Core_Smarty::singleton()->assign('target_contact_id', array_keys($contacts));
+      CRM_Core_Smarty::singleton()->assign('source_record_id', $contribution['id']);
+    }
+
     $params['toEmail'] = implode(',', $contacts);
   }
 }
