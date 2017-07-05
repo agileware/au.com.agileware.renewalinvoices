@@ -220,7 +220,7 @@ function renewalinvoices_civicrm_postProcess($formName, &$form) {
       'reminder_id' => $id,
       'relationship_type' => CRM_Utils_Array::value('relationship_type', $form->_submitValues),
     );
-    if ($form->_submitValues['entity'][0] == 4 && $form->_submitValues['recipient'] == 'relationship') {
+    if ($form->_submitValues['entity'][0] == 4 && $form->_submitValues['recipient'] == 'relationship' && in_array($form->_submitValues['limit_to'], array('1', '0'))) {
       CRM_RenewalInvoices_BAO_RenewalInvoice::addEntity($params);
     }
     else {

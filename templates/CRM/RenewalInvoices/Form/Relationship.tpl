@@ -32,6 +32,9 @@ $(document).ajaxComplete(function( event, xhr, settings ) {
         $('#relationshipGroup').show();
         $('#recipientGroup').hide();
         $('#recipientManual').hide();
+        if (!$('#limit_to').val()) {
+          $('#relationshipGroup').hide();
+        }
       }
     });
     if ($("#recipient").val() == 'relationship') {
