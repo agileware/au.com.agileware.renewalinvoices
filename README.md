@@ -20,3 +20,12 @@ Features
 * The existing "Send confirmation and receipt" contribution functionality would be executed so that the invoice could be sent.
 * The ability to define which contact the membership renewal invoice should be sent to for the membership is critical. Similar to the scheduled reminders feature which allows the reminder to be limited to a "group of contacts" - having this flexibility would meet the requirement of redirecting the membership renewal to the appropriate individual contact when the primary member is an organisation.
 
+Tokens
+------
+
+Some tokens which can be used while creating the email on the scheduled reminders page.
+
+* To attach the invoice to the mail, use {contribution.attachInvoice} or select 'Attach Invoice' from the tokens menu.
+* To display the effective end date after renewal in the mail, use {membership.nextEndDate} or select 'Membership Future End Date' from the tokens menu.
+* The PDF used is the Memberships - Signup and Renewal Receipts (off-line) template, so changes can be made there to alter the output of the invoice.
+
