@@ -1,4 +1,4 @@
-### Membership Renewal Invoices (au.com.agileware.renewalinvoices)
+# Membership Renewal Invoices (au.com.agileware.renewalinvoices)
 
 About
 -----
@@ -25,7 +25,7 @@ Tokens
 
 Some tokens which can be used while creating the email on the scheduled reminders page.
 
-* To attach the invoice to the mail, use {contribution.attachInvoice} or select 'Attach Invoice' from the tokens menu.
-* To display the effective end date after renewal in the mail, use {membership.nextEndDate} or select 'Membership Future End Date' from the tokens menu.
+* To attach the invoice to the mail, use **{contribution.attachInvoice}** or select **'Attach Invoice'** from the tokens menu.
+* To display the effective end date after renewal in the mail, use **{membership.nextEndDate}** or select **'Membership Future End Date'** from the tokens menu.
 * The PDF used is the Memberships - Signup and Renewal Receipts (off-line) template, so changes can be made there to alter the output of the invoice.
 
