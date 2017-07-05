@@ -96,12 +96,13 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
           ));
           if ($aEmails['count'] > 0) {
             foreach ($aEmails['values'] as $key => $val) {
+              $displayName = CRM_Contact_BAO_Contact::displayName($val['contact_id']);
               if ($val['location_type_id'] == CRM_Core_PseudoConstant::getKey('CRM_Core_DAO_Address', 'location_type_id', 'Billing')) {
-                $contacts[$val['contact_id']] = $val['email'];
+                $contacts[$val['contact_id']] = $displayName . " <" . $val['email'] . ">";
                 break;
               }
               elseif ($val['is_primary'] == 1) {
-                $contacts[$val['contact_id']] = $val['email'];
+                $contacts[$val['contact_id']] = $displayName . " <" . $val['email'] . ">";
               }
             }
           }
