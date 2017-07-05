@@ -22,21 +22,23 @@ $(document).ajaxComplete(function( event, xhr, settings ) {
       $("#recipient").append('<option value = "relationship">Select Relationship</option>');
     }
     var reminderId = '{/literal}{$reminderID}{literal}';
-    var url = CRM.url('civicrm/checkrelationship');
-    $.post( url, { reminder_id: reminderId })
-      .done(function( data ) {
-      var relationshiptypeid = data;
-      if (relationshiptypeid) {
-        $("#recipient").val('relationship');
-        $("#relationship_type").select2("val", relationshiptypeid);
-        $('#relationshipGroup').show();
-        $('#recipientGroup').hide();
-        $('#recipientManual').hide();
-        if (!$('#limit_to').val()) {
-          $('#relationshipGroup').hide();
+    if (reminderId) {
+      var url = CRM.url('civicrm/checkrelationship');
+      $.post( url, { reminder_id: reminderId })
+        .done(function( data ) {
+        var relationshiptypeid = data;
+        if (relationshiptypeid) {
+          $("#recipient").val('relationship');
+          $("#relationship_type").select2("val", relationshiptypeid);
+          $('#relationshipGroup').show();
+          $('#recipientGroup').hide();
+          $('#recipientManual').hide();
+          if (!$('#limit_to').val()) {
+            $('#relationshipGroup').hide();
+          }
         }
-      }
-    });
+      });
+    }
     if ($("#recipient").val() == 'relationship') {
       $('#relationshipGroup').show();
     }
