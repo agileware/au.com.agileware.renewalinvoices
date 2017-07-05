@@ -82,6 +82,24 @@ function renewalinvoices_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_managed
  */
 function renewalinvoices_civicrm_managed(&$entities) {
+  $entities[] = array(
+    'module' => 'au.com.agileware.renewalinvoices',
+    'name' => 'relationshiptype',
+    'update' => 'never',
+    'entity' => 'RelationshipType',
+    'params' => array(
+      'name_a_b' => "Key Contact of",
+      'label_a_b' => "Key Contact of",
+      'name_b_a' => "Key Contact is",
+      'label_b_a' => "Key Contact is",
+      'description' => "Key Contact responsible for processing membership renewals",
+      'contact_type_a' => "Individual",
+      'contact_type_b' => "Organization",
+      'is_reserved' => 0,
+      'is_active' => 1,
+      'version' => 3,
+    ),
+  );
   _renewalinvoices_civix_civicrm_managed($entities);
 }
 
