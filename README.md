@@ -14,7 +14,7 @@ For organisation memberships a related contact with a defined relationship like 
 Features
 --------
 
-### The features required are very similar to scheduled reminder functionality, with the addition:
+The features required are very similar to scheduled reminder functionality, with the addition:
 
 * The action for the scheduled reminder would be to generate a "pending" contribution for the membership.
 * The existing "Send confirmation and receipt" contribution functionality would be executed so that the invoice could be sent.
