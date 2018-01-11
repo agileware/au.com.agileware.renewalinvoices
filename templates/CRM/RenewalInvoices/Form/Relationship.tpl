@@ -17,7 +17,7 @@ else {
 }
 
 $(document).ajaxComplete(function( event, xhr, settings ) {
-  if (~settings.url.indexOf("civicrm/ajax/mapping?mappingID=4")) {
+  if (~settings.url.indexOf("civicrm/ajax/mapping?mappingID=4")  || ~settings.url.indexOf("civicrm/ajax/mapping&mappingID=4")) {
     if ($("#recipient option[value='relationship']").length <= 0) {
       $("#recipient").append('<option value = "relationship">Select Relationship</option>');
     }
