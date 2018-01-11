@@ -190,7 +190,7 @@ function renewalinvoices_civicrm_buildForm($formName, &$form) {
  */
 function renewalinvoices_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
   if ($formName == "CRM_Admin_Form_ScheduleReminders") {
-    if (CRM_Utils_Array::value('recipient', $fields) && empty($fields['relationship_type'])) {
+    if (in_array(4, CRM_Utils_Array::value('entity', $fields)) && CRM_Utils_Array::value('recipient', $fields) == "relationship" && empty($fields['relationship_type'])) {
       $errors['recipient'] = ts('If Relationship is selected, you must specify at least one option from the dropdown below.');
     }
   }
