@@ -161,8 +161,8 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
   public static function createInvoice($contribution, $membership) {
     // Get the template - Online Membership receipt.
     $workflow = civicrm_api3('OptionValue', 'get', array(
-      'option_group_id' => 'msg_tpl_workflow_membership',
-      'name' => 'membership_offline_receipt',
+      'option_group_id' => 'msg_tpl_workflow_contribution',
+      'name' => 'contribution_invoice_receipt',
       'return' => array('id'),
     ));
     $workflowId = CRM_Utils_Array::value('id', $workflow, NULL);
@@ -201,40 +201,136 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
    * @return $tplParams|array
    */
   public static function setTplParams($contribution, $membership) {
-    $title = isset($contribution['title']) ? $contribution['title'] : CRM_Contribute_PseudoConstant::contributionPage($contribution['contribution_page_id']);
 
-    $dates = CRM_Member_BAO_MembershipType::getRenewalDatesForMembershipType($membership['id']);
-    $tplParams = array(
-      'contactID' => $contribution['contact_id'],
-      'membership_name' => CRM_Member_PseudoConstant::membershipType($membership['membership_type_id']),
-      'mem_start_date' => CRM_Utils_Date::customFormat($dates['start_date']),
-      'mem_join_date' => CRM_Utils_Date::customFormat($dates['join_date']),
-      'mem_end_date' => CRM_Utils_Date::customFormat($dates['end_date']),
-      'membership_assign' => TRUE,
-      'mem_status' => CRM_Member_PseudoConstant::membershipStatus($membership['status_id'], NULL, 'label'),
-      'displayName' => CRM_Contact_BAO_Contact::displayName($contribution['contact_id']),
-      'contributionID' => CRM_Utils_Array::value('id', $contribution),
-      'contributionOtherID' => CRM_Utils_Array::value('contribution_other_id', $contribution),
-      'title' => $title,
-      'amount' => $contribution['total_amount'],
-      'formValues' => array('total_amount' => $contribution['total_amount']),
-    );
+      $contact = civicrm_api3("Contact","getsingle",array(
+         "id" => $contribution["contact_id"]
+      ));
+      $invoiceElements = CRM_Contribute_Form_Task_PDF::getElements(array($contribution["id"]), array('output' => 'pdf_invoice'), array($contribution["contact_id"]));
+      $prefixValue = Civi::settings()->get('contribution_invoice_settings');
+      $config = CRM_Core_Config::singleton();
+      $invoiceDate = date("F j, Y");
+      $lineItem = CRM_Price_BAO_LineItem::getLineItemsByContributionID($contribution["id"]);
 
-    if ($contributionTypeId = CRM_Utils_Array::value('financial_type_id', $contribution)) {
-      $tplParams['financialTypeId'] = $contributionTypeId;
-      $tplParams['financialTypeName'] = CRM_Core_DAO::getFieldValue('CRM_Financial_DAO_FinancialType',
-                                                                    $contributionTypeId);
-      // Legacy support
-      $tplParams['contributionTypeName'] = $tplParams['financialTypeName'];
-      $tplParams['contributionTypeId'] = $contributionTypeId;
-    }
-    
-    if ($contributionPageId = CRM_Utils_Array::value('id', $contribution)) {
-      $tplParams['contributionPageId'] = $contributionPageId;
-    }
-    foreach ($tplParams as $key => $value) {
-      CRM_Core_Smarty::singleton()->assign($key, $value);
-    }
+      $contributionStatusID = CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name');
+      $refundedStatusId = CRM_Utils_Array::key('Refunded', $contributionStatusID);
+      $cancelledStatusId = CRM_Utils_Array::key('Cancelled', $contributionStatusID);
+      $pendingStatusId = CRM_Utils_Array::key('Pending', $contributionStatusID);
+      $domain = CRM_Core_BAO_Domain::getDomain();
+      $locParams = array('contact_id' => $domain->contact_id);
+      $locationDefaults = CRM_Core_BAO_Location::getValues($locParams);
+
+      if (isset($locationDefaults['address'][1]['state_province_id'])) {
+          $stateProvinceAbbreviationDomain = CRM_Core_PseudoConstant::stateProvinceAbbreviation($locationDefaults['address'][1]['state_province_id']);
+      }
+      else {
+          $stateProvinceAbbreviationDomain = '';
+      }
+      if (isset($locationDefaults['address'][1]['country_id'])) {
+          $countryDomain = CRM_Core_PseudoConstant::country($locationDefaults['address'][1]['country_id']);
+      }
+      else {
+          $countryDomain = '';
+      }
+
+      foreach ($invoiceElements['details'] as $contribID => $detail) {
+          $daoName = 'CRM_Contribute_DAO_ContributionPage';
+          $mailElements = array(
+              'title',
+              'receipt_from_name',
+              'receipt_from_email',
+              'cc_receipt',
+              'bcc_receipt',
+          );
+          $pageid = 2;
+          CRM_Core_DAO::commonRetrieveAll($daoName, 'id', $pageid, $mailDetails, $mailElements);
+          $component = $detail["component"];
+
+          $contributionobj = new CRM_Contribute_BAO_Contribution();
+          $contributionobj->id = $contribution["id"];
+          $contributionobj->find(TRUE);
+
+          $invoiceNumber = CRM_Utils_Array::value('invoice_prefix', $prefixValue) . "" . $contributionobj->id;
+
+          $dataArray = array();
+          $subTotal = 0;
+          foreach ($lineItem as $taxRate) {
+              if (isset($dataArray[(string) $taxRate['tax_rate']])) {
+                  $dataArray[(string) $taxRate['tax_rate']] = $dataArray[(string) $taxRate['tax_rate']] + CRM_Utils_Array::value('tax_amount', $taxRate);
+              }
+              else {
+                  $dataArray[(string) $taxRate['tax_rate']] = CRM_Utils_Array::value('tax_amount', $taxRate);
+              }
+              $subTotal += CRM_Utils_Array::value('subTotal', $taxRate);
+          }
+
+          $addressParams = array('contact_id' => $contributionobj->contact_id);
+          $addressDetails = CRM_Core_BAO_Address::getValues($addressParams);
+          $billingAddress = array();
+          foreach ($addressDetails as $address) {
+              if (($address['is_billing'] == 1) && ($address['is_primary'] == 1) && ($address['contact_id'] == $contribution->contact_id)) {
+                  $billingAddress[$address['contact_id']] = $address;
+                  break;
+              }
+              elseif (($address['is_billing'] == 0 && $address['is_primary'] == 1) || ($address['is_billing'] == 1) && ($address['contact_id'] == $contribution->contact_id)) {
+                  $billingAddress[$address['contact_id']] = $address;
+              }
+          }
+
+          if (!empty($billingAddress[$contribution->contact_id]['state_province_id'])) {
+              $stateProvinceAbbreviation = CRM_Core_PseudoConstant::stateProvinceAbbreviation($billingAddress[$contribution->contact_id]['state_province_id']);
+          }
+          else {
+              $stateProvinceAbbreviation = '';
+          }
+
+          $tplParams = array(
+              'title' => $mailDetails[$pageid]["title"],
+              'component' => $component,
+              'id' => $contributionobj->id,
+              'source' => $contributionobj->source,
+              'invoice_number' => $invoiceNumber,
+              'invoice_id' => $contributionobj->invoice_id,
+              'resourceBase' => $config->userFrameworkResourceURL,
+              'defaultCurrency' => $config->defaultCurrency,
+              'amount' => $contributionobj->total_amount,
+              'amountDue' => $contributionobj->total_amount,
+              'amountPaid' => 0,
+              'invoice_date' => $invoiceDate,
+              'notes' => CRM_Utils_Array::value('notes', $prefixValue),
+              'display_name' => $contact["display_name"],
+              'lineItem' => $lineItem,
+              'dataArray' => $dataArray,
+              'refundedStatusId' => $refundedStatusId,
+              'pendingStatusId' => $pendingStatusId,
+              'cancelledStatusId' => $cancelledStatusId,
+              'contribution_status_id' => $contributionobj->contribution_status_id,
+              'subTotal' => $subTotal,
+              'street_address' => CRM_Utils_Array::value('street_address', CRM_Utils_Array::value($contributionobj->contact_id, $billingAddress)),
+              'supplemental_address_1' => CRM_Utils_Array::value('supplemental_address_1', CRM_Utils_Array::value($contributionobj->contact_id, $billingAddress)),
+              'supplemental_address_2' => CRM_Utils_Array::value('supplemental_address_2', CRM_Utils_Array::value($contributionobj->contact_id, $billingAddress)),
+              'supplemental_address_3' => CRM_Utils_Array::value('supplemental_address_3', CRM_Utils_Array::value($contributionobj->contact_id, $billingAddress)),
+              'city' => CRM_Utils_Array::value('city', CRM_Utils_Array::value($contributionobj->contact_id, $billingAddress)),
+              'stateProvinceAbbreviation' => $stateProvinceAbbreviation,
+              'postal_code' => CRM_Utils_Array::value('postal_code', CRM_Utils_Array::value($contributionobj->contact_id, $billingAddress)),
+              'is_pay_later' => $contributionobj->is_pay_later,
+              'organization_name' => $contributionobj->_relatedObjects['contact']->organization_name,
+              'domain_organization' => $domain->name,
+              'domain_street_address' => CRM_Utils_Array::value('street_address', CRM_Utils_Array::value('1', $locationDefaults['address'])),
+              'domain_supplemental_address_1' => CRM_Utils_Array::value('supplemental_address_1', CRM_Utils_Array::value('1', $locationDefaults['address'])),
+              'domain_supplemental_address_2' => CRM_Utils_Array::value('supplemental_address_2', CRM_Utils_Array::value('1', $locationDefaults['address'])),
+              'domain_supplemental_address_3' => CRM_Utils_Array::value('supplemental_address_3', CRM_Utils_Array::value('1', $locationDefaults['address'])),
+              'domain_city' => CRM_Utils_Array::value('city', CRM_Utils_Array::value('1', $locationDefaults['address'])),
+              'domain_postal_code' => CRM_Utils_Array::value('postal_code', CRM_Utils_Array::value('1', $locationDefaults['address'])),
+              'domain_state' => $stateProvinceAbbreviationDomain,
+              'domain_country' => $countryDomain,
+              'domain_email' => CRM_Utils_Array::value('email', CRM_Utils_Array::value('1', $locationDefaults['email'])),
+              'domain_phone' => CRM_Utils_Array::value('phone', CRM_Utils_Array::value('1', $locationDefaults['phone'])),
+          );
+
+          foreach ($tplParams as $key => $value) {
+              CRM_Core_Smarty::singleton()->assign($key, $value);
+          }
+      }
   }
 
   /**
@@ -295,6 +391,7 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
           ),
         ),
       ),
+      'source'        => $membership["values"][0]['membership_name']." Membership : Renewal",
       'contribution_status_id' => 'Pending',
       'contact_id' => $cid,
       'total_amount' => $lineItems['values'][0]['line_total'],
