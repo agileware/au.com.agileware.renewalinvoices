@@ -276,7 +276,7 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
 
           $dataArray = array();
           $subTotal = 0;
-          foreach ($lineItem as $taxRate) {
+          foreach ($lineItem as $lineindex => $taxRate) {
               if (isset($dataArray[(string) $taxRate['tax_rate']])) {
                   $dataArray[(string) $taxRate['tax_rate']] = $dataArray[(string) $taxRate['tax_rate']] + CRM_Utils_Array::value('tax_amount', $taxRate);
               }
@@ -284,6 +284,9 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
                   $dataArray[(string) $taxRate['tax_rate']] = CRM_Utils_Array::value('tax_amount', $taxRate);
               }
               $subTotal += CRM_Utils_Array::value('subTotal', $taxRate);
+              $lineItem[$lineindex]["label"] = "Renewal Amount for ".$lineItem[$lineindex]["label"]." Membership";
+              $lineItem[$lineindex]["label"] .= "\nExpiring on : ".CRM_Utils_Date::customFormat($membership["end_date"]);
+              $lineItem[$lineindex]["html_type"] = "Text";
           }
 
           $addressParams = array('contact_id' => $contributionobj->contact_id);
