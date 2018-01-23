@@ -231,7 +231,7 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
       $invoiceElements = CRM_Contribute_Form_Task_PDF::getElements(array($contribution["id"]), array('output' => 'pdf_invoice'), array($contribution["contact_id"]));
       $prefixValue = Civi::settings()->get('contribution_invoice_settings');
       $config = CRM_Core_Config::singleton();
-      $invoiceDate = date("F j, Y");
+      $invoiceDate = date("F jS, Y");
       $lineItem = CRM_Price_BAO_LineItem::getLineItemsByContributionID($contribution["id"]);
 
       $contributionStatusID = CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name');
@@ -284,8 +284,9 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
                   $dataArray[(string) $taxRate['tax_rate']] = CRM_Utils_Array::value('tax_amount', $taxRate);
               }
               $subTotal += CRM_Utils_Array::value('subTotal', $taxRate);
-              $lineItem[$lineindex]["label"] = "Renewal Amount for ".$lineItem[$lineindex]["label"]." Membership";
-              $lineItem[$lineindex]["label"] .= "\nExpiring on : ".CRM_Utils_Date::customFormat($membership["end_date"]);
+              $lineItem[$lineindex]["label"] = "Membership renewal: ".$lineItem[$lineindex]["label"]." Membership";
+              $lineItem[$lineindex]["label"] .= "\nExpiring on: ".CRM_Utils_Date::customFormat($membership["end_date"]);
+              $lineItem[$lineindex]["label"] .= "\nMember since: ".CRM_Utils_Date::customFormat($membership["start_date"]);
               $lineItem[$lineindex]["html_type"] = "Text";
           }
 
