@@ -242,6 +242,8 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
       $locParams = array('contact_id' => $domain->contact_id);
       $locationDefaults = CRM_Core_BAO_Location::getValues($locParams);
 
+      $renewaldates = CRM_Member_BAO_MembershipType::getRenewalDatesForMembershipType($membership['id']);
+
       if (isset($locationDefaults['address'][1]['state_province_id'])) {
           $stateProvinceAbbreviationDomain = CRM_Core_PseudoConstant::stateProvinceAbbreviation($locationDefaults['address'][1]['state_province_id']);
       }
@@ -287,6 +289,7 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
               $lineItem[$lineindex]["label"] = "Membership renewal: ".$lineItem[$lineindex]["label"]." Membership";
               $lineItem[$lineindex]["label"] .= "\nExpiring on: ".CRM_Utils_Date::customFormat($membership["end_date"]);
               $lineItem[$lineindex]["label"] .= "\nMember since: ".CRM_Utils_Date::customFormat($membership["start_date"]);
+              $lineItem[$lineindex]["label"] .= "\nMembership period: ".CRM_Utils_Date::customFormat($renewaldates["log_start_date"])." to ".CRM_Utils_Date::customFormat($renewaldates["end_date"]);
               $lineItem[$lineindex]["html_type"] = "Text";
           }
 
