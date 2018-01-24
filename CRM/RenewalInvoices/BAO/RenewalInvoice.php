@@ -287,9 +287,9 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
               }
               $subTotal += CRM_Utils_Array::value('subTotal', $taxRate);
               $lineItem[$lineindex]["label"] = "Membership renewal: ".$lineItem[$lineindex]["label"]." Membership";
-              $lineItem[$lineindex]["label"] .= "\nExpiring on: ".CRM_Utils_Date::customFormat($membership["end_date"]);
-              $lineItem[$lineindex]["label"] .= "\nMember since: ".CRM_Utils_Date::customFormat($membership["start_date"]);
               $lineItem[$lineindex]["label"] .= "\nMembership period: ".CRM_Utils_Date::customFormat($renewaldates["log_start_date"])." to ".CRM_Utils_Date::customFormat($renewaldates["end_date"]);
+              $lineItem[$lineindex]["label"] .= "\nMembership expiring on: ".CRM_Utils_Date::customFormat($membership["end_date"]);
+              $lineItem[$lineindex]["label"] .= "\nMember since: ".CRM_Utils_Date::customFormat($membership["start_date"]);
               $lineItem[$lineindex]["html_type"] = "Text";
           }
 
