@@ -328,6 +328,7 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
               'invoice_date' => $invoiceDate,
               'notes' => CRM_Utils_Array::value('notes', $prefixValue),
               'display_name' => $contact["display_name"],
+              'contactID' => $contributionobj->contact_id,
               'lineItem' => $lineItem,
               'dataArray' => $dataArray,
               'refundedStatusId' => $refundedStatusId,
