@@ -28,5 +28,9 @@ Some tokens which can be used while creating the email on the scheduled reminder
 * To attach the invoice to the mail, use **{contribution.attachInvoice}** or select **'Attach Invoice'** from the tokens menu.
 * To display the effective end date after renewal in the mail, use **{membership.nextEndDate}** or select **'Membership Future End Date'** from the tokens menu.
 * The PDF used is the **Contributions - Invoice** template, so changes can be made there to alter the output of the invoice.
+* To insert URL to renew membership on-line add following code sinppet in **Contributions - Invoice** template. Replace https://example.org with actual host name. 
 
+```
+https://example.org{crmURL p='civicrm/contribute/transact' q="reset=1&id=`$id`&cid=`$contactID`&cs=`$contact.checksum`"}
+``` 
 
