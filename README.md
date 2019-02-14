@@ -1,4 +1,4 @@
-# Membership Renewal Invoices (au.com.agileware.renewalinvoices)
+# Renewal Invoices for Memberships (au.com.agileware.renewalinvoices)
 
 About
 -----
