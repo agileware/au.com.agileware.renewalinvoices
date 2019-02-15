@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <extension key="au.com.agileware.renewalinvoices" type="module">
   <file>renewalinvoices</file>
-  <name>Membership Renewal Invoices</name>
+  <name>Renewal Invoices for Memberships</name>
   <description>This extension adds extra features to Membership Scheduled Reminders allowing mails to be sent to related contacts of members.</description>
   <license>AGPL-3.0</license>
   <maintainer>
