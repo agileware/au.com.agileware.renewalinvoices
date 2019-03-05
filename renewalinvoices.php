@@ -260,7 +260,16 @@ function renewalinvoices_civicrm_postProcess($formName, &$form) {
 function renewalinvoices_civicrm_alterMailParams(&$params, $context) {
   if ($params['groupName'] == "Scheduled Reminder Sender" && $params['entity'] == "action_schedule"
     && ($relationshipTypeId = CRM_RenewalInvoices_BAO_RenewalInvoice::checkRelationship($params['entity_id']))) {
-    list($membership, $contribution) = CRM_RenewalInvoices_BAO_RenewalInvoice::getMembershipAndContribution($params['entity_id'], $params['toEmail']);
+    $response = CRM_RenewalInvoices_BAO_RenewalInvoice::getMembershipAndContribution($params['entity_id'], $params['toEmail']);
+
+    if ($response == NULL) {
+      $params['abortMailSend'] = TRUE;
+      return;
+    }
+
+    $membership = $response[0];
+    $contribution = $response[1];
+
     $contacts = CRM_RenewalInvoices_BAO_RenewalInvoice::checkRelatedContacts($params['entity_id'], $params['toEmail'], $relationshipTypeId, $membership);
     if (empty($contacts)) {
       $params['abortMailSend'] = TRUE;

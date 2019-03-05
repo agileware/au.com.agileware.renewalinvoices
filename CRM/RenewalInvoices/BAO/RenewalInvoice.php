@@ -393,8 +393,8 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
    */
   public static function generateRenewal($reminderId, $cid) {
     // Get current membership ID for user from action log table.
-    $membershipId = CRM_Core_DAO::singleValueQuery("SELECT entity_id FROM civicrm_action_log WHERE contact_id = {$cid} AND entity_table = 'civicrm_membership' AND action_schedule_id = {$reminderId}");
-
+    $membershipId = CRM_Core_DAO::singleValueQuery("SELECT entity_id FROM civicrm_action_log WHERE contact_id = {$cid} AND entity_table = 'civicrm_membership' AND action_schedule_id = {$reminderId} AND action_date_time IS NULL");
+echo $membershipId;
     // Get line items for membership. We need this for the Order API.
     $lineItems = civicrm_api3('LineItem', 'get', array(
       'sequential' => 1,
@@ -408,6 +408,10 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
       'sequential' => 1,
       'id' => $membershipId,
     ));
+
+    if (count($lineItems['values']) == 0 || count($membership['values']) == 0) {
+      return NULL;
+    }
 
     // Order API to create pending contribution for membership.
     $params = array(
@@ -425,6 +429,7 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
       'source'        => $membership["values"][0]['membership_name']." Membership : Renewal",
       'contribution_status_id' => 'Pending',
       'contact_id' => $cid,
+      'tax_amount' => $lineItems['values'][0]['tax_amount'],
       'total_amount' => ($lineItems['values'][0]['line_total'] + $lineItems['values'][0]['tax_amount']),
       'financial_type_id' => $lineItems['values'][0]['financial_type_id'],
     );
