@@ -425,7 +425,7 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
       'source'        => $membership["values"][0]['membership_name']." Membership : Renewal",
       'contribution_status_id' => 'Pending',
       'contact_id' => $cid,
-      'total_amount' => $lineItems['values'][0]['line_total'],
+      'total_amount' => ($lineItems['values'][0]['line_total'] + $lineItems['values'][0]['tax_amount']),
       'financial_type_id' => $lineItems['values'][0]['financial_type_id'],
     );
     $contribution = civicrm_api3('Order', 'create', $params);

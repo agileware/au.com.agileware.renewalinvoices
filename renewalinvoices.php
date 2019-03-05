@@ -208,7 +208,7 @@ function renewalinvoices_civicrm_validateForm($formName, &$fields, &$files, &$fo
  */
 function renewalinvoices_civicrm_pre($op, $objectName, $id, &$params) {
   if ($objectName == "Activity" && $op == "create" &&
-    $params['activity_type_id'] = CRM_Core_PseudoConstant::getKey('CRM_Activity_BAO_Activity', 'activity_type_id', 'Membership Renewal Reminder')) {
+    $params['activity_type_id'] == CRM_Core_PseudoConstant::getKey('CRM_Activity_BAO_Activity', 'activity_type_id', 'Membership Renewal Reminder')) {
 
     // Check to see if we have tokens we need to replace in the activity details.
     if (strpos($params['details'], '[attachInvoice]') !== FALSE) {
