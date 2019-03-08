@@ -258,9 +258,13 @@ function renewalinvoices_civicrm_postProcess($formName, &$form) {
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_alterMailParams
  */
 function renewalinvoices_civicrm_alterMailParams(&$params, $context) {
-  if ($params['groupName'] == "Scheduled Reminder Sender" && $params['entity'] == "action_schedule"
-    && ($relationshipTypeId = CRM_RenewalInvoices_BAO_RenewalInvoice::checkRelationship($params['entity_id']))) {
+  if ($params['groupName'] == "Scheduled Reminder Sender" && $params['entity'] == "action_schedule") {
     $response = CRM_RenewalInvoices_BAO_RenewalInvoice::getMembershipAndContribution($params['entity_id'], $params['toEmail']);
+
+    $relationshipTypeId = CRM_RenewalInvoices_BAO_RenewalInvoice::checkRelationship($params['entity_id']);
+    if (!$relationshipTypeId) {
+      $relationshipTypeId = NULL;
+    }
 
     if ($response == NULL) {
       $params['abortMailSend'] = TRUE;

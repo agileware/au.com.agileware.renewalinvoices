@@ -80,17 +80,22 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
    */
   public static function getEmails($relationshipTypeId, $cid, $directions) {
     $contacts = array();
-    foreach ($directions as $from => $to) {
-      $result = civicrm_api3('Relationship', 'get', array(
-        'sequential' => 1,
-        'relationship_type_id' => $relationshipTypeId,
-        $from => $cid,
-        'is_active' => 1,
-      ));
+    if ($relationshipTypeId == NULL) {
+      self::getIndividualEmails($cid, $emails);
+    }
+    else {
+      foreach ($directions as $from => $to) {
+        $result = civicrm_api3('Relationship', 'get', array(
+          'sequential' => 1,
+          'relationship_type_id' => $relationshipTypeId,
+          $from => $cid,
+          'is_active' => 1,
+        ));
 
-      if ($result['count'] > 0) {
-        foreach ($result['values'] as $value) {
-          self::getIndividualEmails($value[$to], $contacts);
+        if ($result['count'] > 0) {
+          foreach ($result['values'] as $value) {
+            self::getIndividualEmails($value[$to], $contacts);
+          }
         }
       }
     }
