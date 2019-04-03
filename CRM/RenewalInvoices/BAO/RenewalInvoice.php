@@ -168,7 +168,9 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
       return $emails;
     }
     else {
-      array_push($emails, $email);
+      if (array_key_exists($cid, $emails)) {
+        $emails[$cid] = $email;
+      }
       return $emails;
     }
   }
