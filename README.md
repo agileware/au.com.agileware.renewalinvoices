@@ -14,11 +14,9 @@ For organisation memberships a related contact with a defined relationship like 
 Features
 --------
 
-The features required are very similar to scheduled reminder functionality, with the addition:
-
-* The action for the scheduled reminder would be to generate a "pending" contribution for the membership.
-* The existing "Send confirmation and receipt" contribution functionality would be executed so that the invoice could be sent.
-* The ability to define which contact the membership renewal invoice should be sent to for the membership is critical. Similar to the scheduled reminders feature which allows the reminder to be limited to a "group of contacts" - having this flexibility would meet the requirement of redirecting the membership renewal to the appropriate individual contact when the primary member is an organisation.
+* A scheduled reminder is used to generate a "pending" contribution for the membership.
+* Existing "Send confirmation and receipt" contribution functionality is executed so that the invoice is sent.
+* Ability to define which contact the membership renewal invoice is sent to for the membership invoice.
 
 Tokens
 ------
