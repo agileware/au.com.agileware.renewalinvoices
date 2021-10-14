@@ -401,6 +401,11 @@ class CRM_RenewalInvoices_BAO_RenewalInvoice extends CRM_Core_DAO {
   public static function generateRenewal($reminderId, $cid) {
     // Get current membership ID for user from action log table.
     $membershipId = CRM_Core_DAO::singleValueQuery("SELECT entity_id FROM civicrm_action_log WHERE contact_id = {$cid} AND entity_table = 'civicrm_membership' AND action_schedule_id = {$reminderId} AND action_date_time IS NULL");
+    if (empty($membershipId)) {
+      // with empty var, line item get api is going to return loads of line items, which is going to result in
+      // scheduled reminder error: "Line item total doesn't match with total amount"
+      return NULL;
+    }
 
     // Get line items for membership. We need this for the Order API.
     $lineItems = civicrm_api3('LineItem', 'get', array(
