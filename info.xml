@@ -15,16 +15,11 @@
     <url desc="Licensing">http://www.gnu.org/licenses/agpl-3.0.html</url>
     <url desc="Documentation">https://github.com/agileware/au.com.agileware.renewalinvoices/blob/master/README.md</url>
   </urls>
-  <releaseDate>2019-02-15</releaseDate>
-  <version>2.0</version>
+  <releaseDate>2021-10-25</releaseDate>
+  <version>2.1</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>4.7</ver>
-    <ver>5.3</ver>
-    <ver>5.5</ver>
-    <ver>5.6</ver>
-    <ver>5.7</ver>
-    <ver>5.8</ver>
+    <ver>5.0</ver>
   </compatibility>
   <civix>
     <namespace>CRM/RenewalInvoices</namespace>
