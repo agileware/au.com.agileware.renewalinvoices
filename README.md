@@ -1,5 +1,11 @@
 # Renewal Invoices for Memberships (au.com.agileware.renewalinvoices)
 
+Status
+-----
+
+As of 11/11/2024 - this CiviCRM extension is non-functional and not recommended for use. Will cause problems if you install and try to use it. Not being maintained or supported.
+
+
 About
 -----
 
