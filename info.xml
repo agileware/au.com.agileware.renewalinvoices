@@ -15,8 +15,8 @@
     <url desc="Licensing">http://www.gnu.org/licenses/agpl-3.0.html</url>
     <url desc="Documentation">https://github.com/agileware/au.com.agileware.renewalinvoices/blob/master/README.md</url>
   </urls>
-  <releaseDate>2021-10-25</releaseDate>
-  <version>2.1.0</version>
+  <releaseDate>2026-09-12</releaseDate>
+  <version>2.1.1</version>
   <develStage>stable</develStage>
   <compatibility>
     <ver>5.0</ver>
